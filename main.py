@@ -1,5 +1,6 @@
-from parser_products import get_products_from_category
+from parser_products import get_categories, get_products_info, get_products_hrefs
 import openpyxl
+import requests
 
 
 def remove_all_sheets(path: str) -> None:
@@ -11,10 +12,22 @@ def remove_all_sheets(path: str) -> None:
     wb.save(path)
 
 
-def write_cat(path: str, num: int) -> None:
-    prods = get_products_from_category(num)
+def remove_first_sheet(path: str) -> None:
     wb = openpyxl.load_workbook(filename=path,)
-    ws = wb.create_sheet(str(prods["category"]))
+    wb.remove(wb[wb.sheetnames[0]])
+    wb.save(path)
+
+
+def get_sheets_names(path: str):
+    wb = openpyxl.load_workbook(filename=path)
+    res = wb.sheetnames
+    wb.close()
+    return res
+
+
+def write_cat(path: str, cat: dict) -> None:
+    wb = openpyxl.load_workbook(filename=path)
+    ws = wb.create_sheet(str(cat["category"]).replace('/', ' '))
 
     ws.cell(row=1, column=1).value = "Категория"
     ws.cell(row=1, column=2).value = "Артикул"
@@ -25,8 +38,8 @@ def write_cat(path: str, num: int) -> None:
     ws.cell(row=1, column=7).value = "Ссылки на изображения через запятую"
 
     row = 2
-    for product in prods["prods"]:
-        ws.cell(row=row, column=1).value = prods["category"]
+    for product in cat["prods"]:
+        ws.cell(row=row, column=1).value = cat["category"]
         ws.cell(row=row, column=2).value = product["art"]
         ws.cell(row=row, column=3).value = product["brand"]
         ws.cell(row=row, column=4).value = product["name_product"]
@@ -39,41 +52,26 @@ def write_cat(path: str, num: int) -> None:
 
 
 def main():
-    # prods = get_products()
+    path_excel = 'product_catalog.xlsx'
+    path = "https://yacht-parts.ru"
+    products = []
+    brands = {}
+    with requests.Session() as session:
 
-    path = 'product_catalog.xlsx'
+        # remove_all_sheets(path_excel)
 
-    remove_all_sheets(path)
+        get_categories(path, products, session)
+        sheets = get_sheets_names(path_excel)
+        for cat in products:
+            category = cat["category"]
+            if not ((cat["category"] in sheets) or (str(category).replace('/', ' ')) in sheets):
+                get_products_hrefs(path, cat, session)
+                for product in cat["prods"]:
+                    get_products_info(path, product, brands, session)
+                write_cat(path_excel, cat)
 
-    # write_cat(path,123)
-    # write_cat(path,456)
-
-    # get_style()
-
-    # wb = xlwt.Workbook()
-    # ws = wb.add_sheet('Каталог товаров')
-
-    # ws.write(0, 0, "Категория")
-    # ws.write(0, 1, "Артикул")
-    # ws.write(0, 2, "Бренд")
-    # ws.write(0, 3, "Наименование товара")
-    # ws.write(0, 4, "Цена")
-    # ws.write(0, 5, "Описание")
-    # ws.write(0, 6, "Ссылки на изображения через запятую")
-
-    # row = 1
-    # for cat in prods:
-    #     for product in cat["prods"]:
-    #         ws.write(row, 0, cat["category"])
-    #         ws.write(row, 1, product["art"])
-    #         ws.write(row, 2, product["brand"])
-    #         ws.write(row, 3, product["name_product"])
-    #         ws.write(row, 4, product["price"])
-    #         ws.write(row, 5, product["preview"])
-    #         ws.write(row, 6, product["images"])
-    #         row += 1
-
-    # wb.save('product_catalog.xls')
+        remove_first_sheet(path_excel)
+    # remove_all_sheets(path_excel)
 
 
 main()
