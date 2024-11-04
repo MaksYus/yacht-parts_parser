@@ -20,8 +20,7 @@ def req_get(path: str, session: requests.Session, add_headers: dict = {}):
     headers = {
         "Accept": st_accept,
         "User-Agent": st_useragent,
-        "Accept-Encoding": "gzip, deflate, br",
-        "Cookie": "PHPSESSID=QFrwKDO97D764NPVb1w53hjslV1QvcLY; ip_region=%7B%2237.79.74.95%22%3A%7B%22ru%22%3A%7B%22country%22%3A%22Russia%22%2C%22country_code%22%3A%22RU%22%2C%22currency%22%3A%22RUB%22%7D%7D%7D"
+        "Accept-Encoding": "gzip, deflate, br"
     }
     headers.update(add_headers)
     return session.get(path, headers=headers, allow_redirects=True)
